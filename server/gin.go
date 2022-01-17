@@ -54,7 +54,7 @@ func NewGinServer(config *Config) *GinServer {
 
 	binding.Validator = &Validator{}
 
-	s.gin.Use(gin.Logger(), gin.Recovery())
+	s.gin.Use(MiddlewareId, gin.Logger(), gin.Recovery())
 	s.Mount(&ActuatorController{})
 
 	return s
