@@ -65,6 +65,7 @@ func (s *GinServer) Mount(controllers ...interface{}) Server {
 		switch gc := c.(type) {
 		case GinController:
 			router := s.gin.Group(gc.Path(), gc.Middlewares()...)
+			gc.SetEngine(s.gin)
 			gc.Mount(router)
 		default:
 			panic(fmt.Sprintf("Mount gin controller error: [%s] is not GinController", reflect.TypeOf(c)))
@@ -110,12 +111,15 @@ func (s *GinServer) Start() {
 type GinController interface {
 	Name() string
 	Path() string
+	SetEngine(engine *gin.Engine)
+	GetEngine() *gin.Engine
 	Middlewares() []gin.HandlerFunc
 	// Mount 挂载Endpoint
 	Mount(router *gin.RouterGroup)
 }
 
 type BaseController struct {
+	engine *gin.Engine
 }
 
 func (this *BaseController) Name() string {
@@ -124,6 +128,13 @@ func (this *BaseController) Name() string {
 
 func (this *BaseController) Path() string {
 	panic("implement me")
+}
+
+func (this *BaseController) GetEngine() *gin.Engine {
+	return this.engine
+}
+func (this *BaseController) SetEngine(engine *gin.Engine) {
+	this.engine = engine
 }
 
 func (this *BaseController) Middlewares() []gin.HandlerFunc {
@@ -208,9 +219,15 @@ func (this *ActuatorController) Path() string {
 func (this *ActuatorController) Mount(router *gin.RouterGroup) {
 	router.GET("health", this.health)
 	router.GET("env", this.env)
+	router.GET("routes", this.routes)
 }
 
 func (this *ActuatorController) health(ctx *gin.Context) {
+	ctx.String(http.StatusOK, "OK")
+}
+
+func (this *ActuatorController) routes(ctx *gin.Context) {
+	this.Send(Routes(this.GetEngine()))
 	ctx.String(http.StatusOK, "OK")
 }
 
@@ -224,5 +241,5 @@ func (this *ActuatorController) env(ctx *gin.Context) {
 		}
 		ret[key[0:i]] = key[i+1:]
 	}
-	ctx.JSON(http.StatusOK, ret)
+	this.Send(ret)
 }
