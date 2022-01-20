@@ -1,7 +1,6 @@
 package orca
 
 import (
-	"github.com/asdine/storm/v3"
 	redis2 "github.com/go-redis/redis/v8"
 	"github.com/vuuvv/orca/config"
 	"github.com/vuuvv/orca/database"
@@ -9,7 +8,6 @@ import (
 	"github.com/vuuvv/orca/redis"
 	"github.com/vuuvv/orca/serialize"
 	"github.com/vuuvv/orca/server"
-	"github.com/vuuvv/orca/stormdb"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -21,7 +19,6 @@ type Application struct {
 	logger       *zap.Logger
 	redisClient  *redis2.Client
 	db           *gorm.DB
-	storm        *storm.DB
 }
 
 type ApplicationOption func(app *Application)
@@ -102,19 +99,6 @@ func NewApplication(opts ...ApplicationOption) *Application {
 		}
 	}
 
-	// storm初始化
-	if app.configLoader.IsSet("storm") {
-		stormdbConfig := &stormdb.Config{}
-		err = app.UnmarshalConfig(stormdbConfig, "storm")
-		if err != nil {
-			panic(err)
-		}
-		app.storm, err = stormdb.NewStorm(stormdbConfig)
-		if err != nil {
-			panic(err)
-		}
-	}
-
 	// http服务器初始化
 	httpConfig := &server.Config{}
 	err = app.UnmarshalConfig(httpConfig, "http")
@@ -175,10 +159,6 @@ func Redis() *redis2.Client {
 
 func Database() *gorm.DB {
 	return defaultApplication.db
-}
-
-func Storm() *storm.DB {
-	return defaultApplication.storm
 }
 
 func Start(controllers ...interface{}) {

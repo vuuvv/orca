@@ -13,11 +13,10 @@ require (
 )
 
 require (
-	github.com/asdine/storm/v3 v3.2.1
 	github.com/vuuvv/mapstructure v1.4.6
 	github.com/vuuvv/viper v1.10.5
-	go.etcd.io/etcd/client/pkg/v3 v3.5.1
 	go.uber.org/zap v1.17.0
 	gorm.io/driver/mysql v1.2.3
+	gorm.io/driver/postgres v1.2.3
 	gorm.io/gorm v1.22.5
 )

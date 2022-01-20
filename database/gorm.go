@@ -4,6 +4,7 @@ import (
 	"github.com/vuuvv/errors"
 	"go.uber.org/zap"
 	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"log"
@@ -23,7 +24,15 @@ func NewGorm(config *Config) (db *gorm.DB, err error) {
 			Colorful:      true,
 		})
 	}
-	db, err = gorm.Open(mysql.Open(config.Dsn), gConfig)
+	switch config.Type {
+	case "postgres":
+		db, err = gorm.Open(postgres.New(postgres.Config{
+			DSN:                  config.Dsn,
+			PreferSimpleProtocol: true,
+		}), gConfig)
+	default:
+		db, err = gorm.Open(mysql.Open(config.Dsn), gConfig)
+	}
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
