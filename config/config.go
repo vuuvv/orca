@@ -90,6 +90,15 @@ func getEnv(name string) (val string, ok bool) {
 	return "", false
 }
 
+func MustLoad(path string) Loader {
+	loader := NewViperConfigLoader()
+	err := loader.Load(path)
+	if err != nil {
+		panic(err)
+	}
+	return loader
+}
+
 func getEnvRelax(name string) (val string, ok bool) {
 	noDotName := strings.ReplaceAll(name, ".", "_")
 	if name != noDotName {

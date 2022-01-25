@@ -3,8 +3,9 @@ package orca
 import (
 	redis2 "github.com/go-redis/redis/v8"
 	"github.com/vuuvv/orca/config"
-	"github.com/vuuvv/orca/database"
+	"github.com/vuuvv/orca/id"
 	"github.com/vuuvv/orca/logger"
+	"github.com/vuuvv/orca/orm"
 	"github.com/vuuvv/orca/redis"
 	"github.com/vuuvv/orca/serialize"
 	"github.com/vuuvv/orca/server"
@@ -19,6 +20,7 @@ type Application struct {
 	logger       *zap.Logger
 	redisClient  *redis2.Client
 	db           *gorm.DB
+	idGenerator  *id.Generator
 }
 
 type ApplicationOption func(app *Application)
@@ -86,14 +88,23 @@ func NewApplication(opts ...ApplicationOption) *Application {
 		}
 	}
 
+	if app.redisClient != nil {
+		app.idGenerator, err = id.NewGenerator(id.WithRedisClient(app.redisClient))
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		app.idGenerator, err = id.NewGenerator()
+	}
+
 	// gorm初始化
 	if app.configLoader.IsSet("database") {
-		databaseConfig := &database.Config{}
+		databaseConfig := &orm.Config{}
 		err = app.UnmarshalConfig(databaseConfig, "database")
 		if err != nil {
 			panic(err)
 		}
-		app.db, err = database.NewGorm(databaseConfig)
+		app.db, err = orm.New(databaseConfig)
 		if err != nil {
 			panic(err)
 		}

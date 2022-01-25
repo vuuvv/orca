@@ -1,4 +1,4 @@
-package database
+package orm
 
 import (
 	"github.com/vuuvv/errors"
@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-func NewGorm(config *Config) (db *gorm.DB, err error) {
+func New(config *Config) (db *gorm.DB, err error) {
 	gConfig := &gorm.Config{
 		SkipDefaultTransaction: true,
 		PrepareStmt:            true,

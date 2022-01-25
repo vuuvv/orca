@@ -64,10 +64,10 @@ func NewGenerator(opts ...Option) (g *Generator, err error) {
 		opt(g)
 	}
 
-	if g.client == nil {
-		// 默认redis client localhost:6379
-		g.client = redis.NewClient(&redis.Options{})
-	}
+	//if g.client == nil {
+	// 默认redis client localhost:6379
+	//g.client = redis.NewClient(&redis.Options{})
+	//}
 
 	if g.snowflake == nil {
 		// 默认snowflake
@@ -79,20 +79,33 @@ func NewGenerator(opts ...Option) (g *Generator, err error) {
 		return nil, err
 	}
 
+	if generator == nil {
+		ReplaceGlobal(g)
+	}
+
 	return
 }
 
-func (g *Generator) Next() (id int64, err error) {
+func (g *Generator) Next() (id int64) {
 	if g.status != Running {
-		return 0, errors.New("Id generator is not running")
+		return 0
 	}
 
-	return g.snowflake.Next(), nil
+	return g.snowflake.Next()
 }
 
 func (g *Generator) registerWorkerId() (err error) {
 	ctx := context.Background()
 
+	// 如果没有redis, 则设置workerId为1
+	if g.client == nil {
+		g.status = Running
+		g.err = nil
+		g.snowflake.SetWorkerId(1)
+		return
+	}
+
+	// 多机协作的情况下获取worker id
 	max := int(g.snowflake.GetMaxWorks())
 	for i := 0; i < max; i++ {
 		cmd := g.client.SetNX(ctx, fmt.Sprintf(g.keyFormat, i), g.uid, g.ttl)
@@ -179,12 +192,9 @@ func ReplaceGlobal(g *Generator) {
 	generator = g
 }
 
-func Next() (id int64, err error) {
+func Next() (id int64) {
 	if generator == nil {
-		generator, err = NewGenerator()
-		if err != nil {
-			return 0, err
-		}
+		panic(fmt.Sprintf("No ID generator set up"))
 	}
 	return generator.Next()
 }
