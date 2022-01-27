@@ -48,7 +48,7 @@ func ParseForm(ctx *gin.Context, val interface{}) (err error) {
 	if err = Parse(ctx, val); err != nil {
 		return err
 	}
-	return binding.Validator.ValidateStruct(val)
+	return errors.WithStack(binding.Validator.ValidateStruct(val))
 }
 
 func MustParseForm(ctx *gin.Context, val interface{}) {

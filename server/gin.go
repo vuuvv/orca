@@ -8,6 +8,7 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"github.com/vuuvv/errors"
 	"github.com/vuuvv/govalidator"
+	"github.com/vuuvv/orca/orm"
 	"go.uber.org/zap"
 	"net/http"
 	"os"
@@ -146,6 +147,26 @@ func (this *BaseController) Mount(router *gin.RouterGroup) {
 
 func (this *BaseController) Context() *gin.Context {
 	return GetContext()
+}
+
+func (this *BaseController) ValidForm(value interface{}) (err error) {
+	return ParseForm(this.Context(), value)
+}
+
+func (this *BaseController) ParseFormIds() (ids []int64, err error) {
+	return ParseIds(this.Context())
+}
+
+func (this *BaseController) GetQueryInt(key string, required bool) (value int, err error) {
+	return ParseQueryInt(this.Context(), key, required)
+}
+
+func (this *BaseController) GetQueryInt64(key string, required bool) (value int64, err error) {
+	return ParseQueryInt64(this.Context(), key, required)
+}
+
+func (this *BaseController) GetPaginator() *orm.Paginator {
+	return orm.GetPaginator(this.Context().Query("q"))
 }
 
 func (this *BaseController) Send(value interface{}) {
