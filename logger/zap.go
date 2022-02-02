@@ -44,11 +44,11 @@ func NewLogger(config *Config, opts ...zap.Option) *zap.Logger {
 	}
 
 	encConfig := zapcore.EncoderConfig{
-		TimeKey:        "ts",
-		LevelKey:       "level",
-		NameKey:        "logger",
-		CallerKey:      "caller",
-		StacktraceKey:  "stacktrace",
+		TimeKey:   "ts",
+		LevelKey:  "level",
+		NameKey:   "logger",
+		CallerKey: "caller",
+		//StacktraceKey:  "stacktrace",
 		MessageKey:     "_msg",
 		LineEnding:     zapcore.DefaultLineEnding,
 		EncodeLevel:    zapcore.LowercaseLevelEncoder,

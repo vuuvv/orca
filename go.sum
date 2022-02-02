@@ -202,6 +202,8 @@ github.com/gofrs/uuid v4.0.0+incompatible/go.mod h1:b2aQJv3Z4Fp6yNu3cdSllBxTCLRx
 github.com/gogo/protobuf v1.1.1/go.mod h1:r8qH/GZQm5c6nD/R0oafs1akxWv10x8SbQlK7atdtwQ=
 github.com/gogo/protobuf v1.2.1/go.mod h1:hp+jE20tsWTFYpLwKvXlhS1hjn+gTNwPg2I6zVXpSg4=
 github.com/gogo/protobuf v1.3.2/go.mod h1:P1XiOD3dCwIKUDQYPy72D8LYyHL2YPYrpS2s69NZV8Q=
+github.com/golang-jwt/jwt/v4 v4.2.0 h1:besgBTC8w8HjP6NzQdxwKH9Z5oQMZ24ThTrHp3cZ8eU=
+github.com/golang-jwt/jwt/v4 v4.2.0/go.mod h1:/xlHOz8bRuivTWchD4jCa+NbatV+wEUSzwAxVc6locg=
 github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b/go.mod h1:SBH7ygxi8pfUlaOkMMuAQtPIUF8ecWP5IEl/CR7VP2Q=
 github.com/golang/groupcache v0.0.0-20190129154638-5b532d6fd5ef/go.mod h1:cIg4eruTrX1D+g88fzRXU5OdNfaM+9IcxsU14FzY7Hc=
 github.com/golang/groupcache v0.0.0-20190702054246-869f871628b6/go.mod h1:cIg4eruTrX1D+g88fzRXU5OdNfaM+9IcxsU14FzY7Hc=
@@ -611,8 +613,9 @@ github.com/ugorji/go/codec v1.1.13/go.mod h1:oNVt3Dq+FO91WNQ/9JnHKQP2QJxTzoN7wCB
 github.com/ugorji/go/codec v1.2.5 h1:8WobZKAk18Msm2CothY2jnztY56YVY8kF1oQrj21iis=
 github.com/ugorji/go/codec v1.2.5/go.mod h1:QPxoTbPKSEAlAHPYt02++xp/en9B/wUdwFCz+hj5caA=
 github.com/urfave/cli v1.20.0/go.mod h1:70zkFmudgCuE/ngEzBv17Jvp/497gISqfk5gWijbERA=
-github.com/vuuvv/errors v0.9.3 h1:Dy+qbDkmE91uHmVi0HXw7aJ7k6d72hWfP70+l1R0vGA=
 github.com/vuuvv/errors v0.9.3/go.mod h1:+eu9ALEP20psC0Y/HF44I9PxF1DO3EHdBHlczAT9ggI=
+github.com/vuuvv/errors v0.9.5 h1:Sp3icWV7Azoef06l4RVKJ42aOJKOG4BDWuWnxu88+ME=
+github.com/vuuvv/errors v0.9.5/go.mod h1:+eu9ALEP20psC0Y/HF44I9PxF1DO3EHdBHlczAT9ggI=
 github.com/vuuvv/goid v0.0.1 h1:pHp9HA+EI3WUXKxmQ8kPC8h8vv8YPnl33zWiGy/IIUA=
 github.com/vuuvv/goid v0.0.1/go.mod h1:sqP9iKwEwpNlB81xDuBnhBb5Y6HLRN9WX/yHXTx787g=
 github.com/vuuvv/govalidator v0.12.0 h1:GCj4JOjwCMg6vQ6Jm9ZCSSwLvA+V/jPiU7WwT/Rd09w=

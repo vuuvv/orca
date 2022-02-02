@@ -42,5 +42,5 @@ func (this *indexController) IndexWithMiddleware(ctx *gin.Context) {
 }
 
 func main() {
-	orca.Start(&indexController{})
+	orca.StartDefault(&indexController{})
 }

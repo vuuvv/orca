@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/vuuvv/errors"
 	"github.com/vuuvv/govalidator"
+	"net/http"
 )
 
 type Error struct {
@@ -18,8 +19,12 @@ func (e *Error) Error() string {
 	return fmt.Sprintf("[%d]%s", e.Code, e.Message)
 }
 
+func (e *Error) WithStack() error {
+	return errors.WithStack(e)
+}
+
 func NewError(code int, message string) error {
-	return errors.WithStack(&Error{Code: code, Message: message})
+	return &Error{Code: code, Message: message}
 }
 
 func ErrorBadRequest(format string, a ...interface{}) error {
@@ -31,4 +36,24 @@ func ErrorBadRequest(format string, a ...interface{}) error {
 
 func ErrorNoArgument() error {
 	return ErrorBadRequest("请传入参数")
+}
+
+var ErrorForbidden = &Error{
+	Code:    http.StatusForbidden,
+	Message: "无权访问",
+	NeedLog: false,
+}
+
+func NewErrorForbidden() error {
+	return errors.WithStack(ErrorForbidden)
+}
+
+var ErrorUnauthorized = &Error{
+	Code:    http.StatusUnauthorized,
+	Message: "请先登录",
+	NeedLog: false,
+}
+
+func NewErrorUnauthorized() error {
+	return errors.WithStack(ErrorUnauthorized)
 }

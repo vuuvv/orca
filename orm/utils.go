@@ -16,6 +16,10 @@ import (
 	"reflect"
 )
 
+func RecordNotFound(err error) bool {
+	return errors.Is(err, gorm.ErrRecordNotFound)
+}
+
 func ForUpdate(db *gorm.DB) *gorm.DB {
 	return db.Clauses(clause.Locking{Strength: "UPDATE"})
 }
@@ -192,7 +196,7 @@ func Updates(db *gorm.DB, model interface{}, fields ...string) (err error) {
 	return errors.WithStack(err)
 }
 
-func Update(db *gorm.DB, model EntityType, form EntityType) (err error) {
+func Update(db *gorm.DB, model EntityType, form EntityType, excludeFields ...string) (err error) {
 	err = db.First(model, form.GetId()).Error
 	if err != nil {
 		if utils.RecordNotFound(err) {
@@ -200,7 +204,7 @@ func Update(db *gorm.DB, model EntityType, form EntityType) (err error) {
 		}
 		return errors.WithStack(err)
 	}
-	fields := NeedUpdateFields(model, form)
+	fields := NeedUpdateFields(model, form, excludeFields...)
 	if len(fields) > 0 {
 		err = copier.Copy(model, form)
 		if err != nil {

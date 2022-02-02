@@ -73,9 +73,9 @@ type TreeType interface {
 
 type Tree struct {
 	Id
-	ParentId int64  `json:"parentId" gorm:"default:0;index:idx_parent_id;comment:父Id"`
-	Code     string `json:"code" gorm:"type:varchar(30) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL COMMENT '用于查询的Id，和Path一起使用'"`
-	Path     string `json:"path" gorm:"type:varchar(80) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL COMMENT '查询路径，包括所有祖先的code，用:分割'"`
+	ParentId int64  `json:"parentId" gorm:"default:0;comment:父Id"`
+	Code     string `json:"code" gorm:"comment:用于查询的Id，和Path一起使用"`
+	Path     string `json:"path" gorm:"comment:查询路径，包括所有祖先的code，用:分割"`
 }
 
 func (e *Tree) GetParentId() int64 {

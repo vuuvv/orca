@@ -1,7 +1,9 @@
 package orca
 
 import (
+	"database/sql"
 	redis2 "github.com/go-redis/redis/v8"
+	"github.com/vuuvv/errors"
 	"github.com/vuuvv/orca/config"
 	"github.com/vuuvv/orca/id"
 	"github.com/vuuvv/orca/logger"
@@ -142,6 +144,10 @@ func (this *Application) SetDefault() {
 	ReplaceDefaultApplication(this)
 }
 
+func (this *Application) GetHttpServer() server.Server {
+	return this.httpServer
+}
+
 func (this *Application) Start() {
 	if this.httpServer == nil {
 		panic("Application start error: http server is nil")
@@ -150,7 +156,26 @@ func (this *Application) Start() {
 	this.httpServer.Start()
 }
 
+func (this *Application) Use(handlers ...interface{}) *Application {
+	if this.httpServer == nil {
+		panic("Application start error: http server is nil")
+	}
+	this.httpServer.Use(handlers...)
+	return this
+}
+
+func (this *Application) Default() server.Server {
+	if this.httpServer == nil {
+		panic("Application start error: http server is nil")
+	}
+	return this.httpServer.Default()
+}
+
 var defaultApplication *Application = nil
+
+func App() *Application {
+	return defaultApplication
+}
 
 func ReplaceDefaultApplication(app *Application) {
 	defaultApplication = app
@@ -172,9 +197,28 @@ func Database() *gorm.DB {
 	return defaultApplication.db
 }
 
+func Transaction(fc func(tx *gorm.DB) error, opts ...*sql.TxOptions) error {
+	return errors.WithStack(defaultApplication.db.Transaction(fc, opts...))
+}
+
+func Use(handlers ...interface{}) *Application {
+	if defaultApplication == nil {
+		defaultApplication = NewApplication()
+	}
+	defaultApplication.Use(handlers...)
+	return defaultApplication
+}
+
 func Start(controllers ...interface{}) {
 	if defaultApplication == nil {
 		defaultApplication = NewApplication()
 	}
 	defaultApplication.Mount(controllers...).Start()
+}
+
+func StartDefault(controllers ...interface{}) {
+	if defaultApplication == nil {
+		defaultApplication = NewApplication()
+	}
+	defaultApplication.Default().Mount(controllers...).Start()
 }

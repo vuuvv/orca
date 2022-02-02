@@ -32,8 +32,9 @@ var httpMethods = []string{
 }
 
 type GinServer struct {
-	gin  *gin.Engine
-	addr string
+	gin         *gin.Engine
+	config      *Config
+	middlewares []gin.HandlerFunc
 }
 
 func NewGinServer(config *Config) *GinServer {
@@ -45,20 +46,76 @@ func NewGinServer(config *Config) *GinServer {
 		config.Port = 4000
 	}
 
+	if config.AccessTokenMaxAge == 0 {
+		config.AccessTokenMaxAge = 15
+	}
+
+	if config.AccessTokenHead == "" {
+		config.AccessTokenHead = "Authorization"
+	}
+
+	if config.RefreshTokenMaxAge == 0 {
+		config.RefreshTokenMaxAge = 60
+	}
+
+	if config.RefreshTokenHead == "" {
+		config.RefreshTokenHead = "RefreshToken"
+	}
+
+	if config.JwtSecret == "" {
+		config.JwtSecret = "eyJhbG.JIUzI1NiIsInR5cCI6IkpXVCJ9"
+	}
+
+	if config.JwtTokenPrefix == "" {
+		config.JwtTokenPrefix = "Bearer"
+	}
+
+	if config.JwtIssuer == "" {
+		config.JwtIssuer = "orca.vuuvv.com"
+	}
+
 	// 如果mode为空，gin会默认设置为debug
 	gin.SetMode(config.Mode)
 
 	s := &GinServer{
-		gin:  gin.New(),
-		addr: fmt.Sprintf("%s:%d", config.Host, config.Port),
+		gin:    gin.New(),
+		config: config,
 	}
 
 	binding.Validator = &Validator{}
 
-	s.gin.Use(MiddlewareId, gin.Logger(), gin.Recovery())
 	s.Mount(&ActuatorController{})
 
 	return s
+}
+
+func (s *GinServer) addr() string {
+	if s.config == nil {
+		panic("Http server config is nil!")
+	}
+	return fmt.Sprintf("%s:%d", s.config.Host, s.config.Port)
+}
+
+func (s *GinServer) GetConfig() *Config {
+	return s.config
+}
+
+func (s *GinServer) Use(handlers ...interface{}) Server {
+	for _, item := range handlers {
+		switch h := item.(type) {
+		case gin.HandlerFunc:
+			s.gin.Use(h)
+		case func(context2 *gin.Context):
+			s.gin.Use(h)
+		default:
+			panic(fmt.Sprintf("Add gin middleware error: [%s] is not gin.HandleFunc", reflect.TypeOf(item)))
+		}
+	}
+	return s
+}
+
+func (s *GinServer) Default() Server {
+	return s.Use(MiddlewareId, gin.Logger(), gin.Recovery())
 }
 
 func (s *GinServer) Mount(controllers ...interface{}) Server {
@@ -66,7 +123,7 @@ func (s *GinServer) Mount(controllers ...interface{}) Server {
 		switch gc := c.(type) {
 		case GinController:
 			router := s.gin.Group(gc.Path(), gc.Middlewares()...)
-			gc.SetEngine(s.gin)
+			gc.SetServer(s)
 			gc.Mount(router)
 		default:
 			panic(fmt.Sprintf("Mount gin controller error: [%s] is not GinController", reflect.TypeOf(c)))
@@ -76,8 +133,11 @@ func (s *GinServer) Mount(controllers ...interface{}) Server {
 }
 
 func (s *GinServer) Start() {
+	if len(s.middlewares) > 0 {
+		s.gin.Use(s.middlewares...)
+	}
 	srv := &http.Server{
-		Addr:    s.addr,
+		Addr:    s.addr(),
 		Handler: s.gin,
 	}
 
@@ -112,7 +172,8 @@ func (s *GinServer) Start() {
 type GinController interface {
 	Name() string
 	Path() string
-	SetEngine(engine *gin.Engine)
+	GetServer() *GinServer
+	SetServer(server *GinServer)
 	GetEngine() *gin.Engine
 	Middlewares() []gin.HandlerFunc
 	// Mount 挂载Endpoint
@@ -120,7 +181,8 @@ type GinController interface {
 }
 
 type BaseController struct {
-	engine *gin.Engine
+	//engine *gin.Engine
+	server *GinServer
 }
 
 func (this *BaseController) Name() string {
@@ -131,11 +193,15 @@ func (this *BaseController) Path() string {
 	panic("implement me")
 }
 
-func (this *BaseController) GetEngine() *gin.Engine {
-	return this.engine
+func (this *BaseController) GetServer() *GinServer {
+	return this.server
 }
-func (this *BaseController) SetEngine(engine *gin.Engine) {
-	this.engine = engine
+
+func (this *BaseController) GetEngine() *gin.Engine {
+	return this.server.gin
+}
+func (this *BaseController) SetServer(server *GinServer) {
+	this.server = server
 }
 
 func (this *BaseController) Middlewares() []gin.HandlerFunc {
@@ -202,8 +268,21 @@ func (this *BaseController) SendJson(statusCode int, value interface{}) {
 }
 
 func (this *BaseController) SendError(err error) {
-	switch e := err.(type) {
+	rawErr := err
+	if errors.HasStack(rawErr) {
+		rawErr = errors.Unwrap(rawErr)
+		if rawErr == nil {
+			rawErr = err
+		}
+	}
+	switch e := rawErr.(type) {
 	case govalidator.Error:
+		this.SendJson(http.StatusBadRequest, &Response{
+			Code:    http.StatusBadRequest,
+			Message: e.Error(),
+			Detail:  fmt.Sprintf("%+v", e),
+		})
+	case *govalidator.Error:
 		this.SendJson(http.StatusBadRequest, &Response{
 			Code:    http.StatusBadRequest,
 			Message: e.Error(),
@@ -223,6 +302,11 @@ func (this *BaseController) SendError(err error) {
 			Detail:  fmt.Sprintf("%+v", e),
 		})
 	}
+	msg := err.Error()
+	if this.server.config.Mode == gin.DebugMode {
+		msg = fmt.Sprintf("%+v", err)
+	}
+	zap.L().Error(msg, zap.Error(err))
 }
 
 type ActuatorController struct {
@@ -263,4 +347,51 @@ func (this *ActuatorController) env(ctx *gin.Context) {
 		ret[key[0:i]] = key[i+1:]
 	}
 	this.Send(ret)
+}
+
+func WriteTokenToHead(ctx *gin.Context, config *Config, accessToken string, refreshToken string) {
+	ctx.Writer.Header().Add(config.AccessTokenHead, config.JwtTokenPrefix+" "+accessToken)
+	ctx.Writer.Header().Add(config.RefreshTokenHead, config.JwtTokenPrefix+" "+refreshToken)
+}
+
+func WriteTokenToCookies(ctx *gin.Context, config *Config, accessToken string, refreshToken string) {
+	// max age of  access token and refresh token should be refresh token's max age
+	ctx.SetCookie(
+		config.AccessTokenHead,
+		accessToken,
+		config.RefreshTokenMaxAge*60,
+		"/",
+		"",
+		false,
+		true,
+	)
+	ctx.SetCookie(
+		config.RefreshTokenHead,
+		refreshToken,
+		config.RefreshTokenMaxAge*60,
+		"/",
+		"",
+		false,
+		true,
+	)
+}
+
+func GenTokens(config *Config, userId int64, username string, roles []int64) (accessToken string, refreshToken string, err error) {
+	accessToken, err = GenAccessToken(
+		config.JwtIssuer, time.Duration(config.AccessTokenMaxAge)*time.Minute, config.JwtSecret,
+		userId, username, roles,
+	)
+	if err != nil {
+		return "", "", err
+		//ctx.JSON(http.StatusInternalServerError, NewError(http.StatusInternalServerError, err.Error()))
+		//ctx.Abort()
+		//return
+	}
+	refreshToken, err = GenRefreshToken(
+		config.JwtIssuer, time.Duration(config.RefreshTokenMaxAge)*time.Minute, config.JwtSecret, userId,
+	)
+	if err != nil {
+		return "", "", err
+	}
+	return
 }
