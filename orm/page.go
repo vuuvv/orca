@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/vuuvv/orca/utils"
 	"gorm.io/gorm"
+	"strings"
 )
 
 type Criteria struct {
@@ -66,10 +67,28 @@ type Page struct {
 	Items    interface{} `json:"items"`
 }
 
+type OrderBy struct {
+	Table string `json:"table"`
+	Field string `json:"field"`
+	ASC   bool   `json:"asc"`
+}
+
+func (this *OrderBy) Sql(db *gorm.DB) string {
+	asc := "ASC"
+	if !this.ASC {
+		asc = "DESC"
+	}
+	if this.Table != "" {
+		return fmt.Sprintf("%s.%s %s", Quote(db, this.Table), Quote(db, this.Field), asc)
+	}
+	return fmt.Sprintf("%s %s", this.Field, asc)
+}
+
 type PageExecutor struct {
 	countSql string
 	sql      string
 	shareSql string
+	orderBy  []*OrderBy
 	criteria map[string]*Criteria
 }
 
@@ -101,6 +120,15 @@ func (p *PageExecutor) Criteria(name string, table string, field string, op stri
 
 func (p *PageExecutor) Join(sql string) *PageExecutor {
 	p.shareSql = sql
+	return p
+}
+
+func (p *PageExecutor) OrderBy(table string, field string, asc bool) *PageExecutor {
+	p.orderBy = append(p.orderBy, &OrderBy{
+		Table: table,
+		Field: field,
+		ASC:   asc,
+	})
 	return p
 }
 
@@ -145,6 +173,14 @@ func (p *PageExecutor) Query(db *gorm.DB, page *Paginator, items interface{}) (*
 
 	// 获取值
 	sql, values := prepare(utils.LineJoin(p.sql, p.shareSql), vars, page.Filters, p.criteria)
+	var orderBySql []string
+	for _, o := range p.orderBy {
+		orderBySql = append(orderBySql, o.Sql(db))
+	}
+	orderBy := strings.Join(orderBySql, ",")
+	if orderBy != "" {
+		sql = utils.LineJoin(sql, fmt.Sprintf("ORDER BY %s", orderBy))
+	}
 	// limit
 	if page.UseOffset {
 		sql = utils.LineJoin(sql, fmt.Sprintf("LIMIT %d offset %d", ret.PageSize, page.Offset))

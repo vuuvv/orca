@@ -58,6 +58,12 @@ func MiddlewareJwt(config *Config, authorization Authorization) gin.HandlerFunc 
 		}
 		ctx.Set(AccessTokenContextKey, accessToken)
 
+		if guard.IsGuard() && !authorization.Authorized(accessToken, ctx.Request) {
+			ctx.JSON(http.StatusForbidden, NewErrorForbidden())
+			ctx.Abort()
+			return
+		}
+
 		// TODO: check permission
 
 		ctx.Next()

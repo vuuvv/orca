@@ -115,9 +115,27 @@ type methodTree struct {
 type methodTrees []methodTree
 
 type Route struct {
-	Method  string
-	Path    string
-	Handler string
+	Group      string
+	Name       string
+	Method     string
+	Path       string
+	Handler    string
+	Permission Guard
+}
+
+func (this *Route) WithName(name string) *Route {
+	this.Name = name
+	return this
+}
+
+func (this *Route) Anonymous() *Route {
+	this.Permission = GuardAnonymous
+	return this
+}
+
+func (this *Route) Login() *Route {
+	this.Permission = GuardLogin
+	return this
 }
 
 func Routes(gin *gin.Engine) []*Route {

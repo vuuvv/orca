@@ -9,10 +9,12 @@ import (
 	"github.com/vuuvv/errors"
 	"github.com/vuuvv/govalidator"
 	"github.com/vuuvv/orca/orm"
+	"github.com/vuuvv/orca/utils"
 	"go.uber.org/zap"
 	"net/http"
 	"os"
 	"os/signal"
+	pathLib "path"
 	"reflect"
 	"strings"
 	"syscall"
@@ -32,9 +34,10 @@ var httpMethods = []string{
 }
 
 type GinServer struct {
-	gin         *gin.Engine
-	config      *Config
-	middlewares []gin.HandlerFunc
+	gin    *gin.Engine
+	config *Config
+	routes []*Route
+	//middlewares []gin.HandlerFunc
 }
 
 func NewGinServer(config *Config) *GinServer {
@@ -84,8 +87,6 @@ func NewGinServer(config *Config) *GinServer {
 
 	binding.Validator = &Validator{}
 
-	s.Mount(&ActuatorController{})
-
 	return s
 }
 
@@ -118,12 +119,22 @@ func (s *GinServer) Default() Server {
 	return s.Use(MiddlewareId, gin.Logger(), gin.Recovery())
 }
 
+func (s *GinServer) AddRoute(route *Route) {
+	s.routes = append(s.routes, route)
+}
+
+func (s *GinServer) Routes() []*Route {
+	return s.routes
+}
+
 func (s *GinServer) Mount(controllers ...interface{}) Server {
 	for _, c := range controllers {
 		switch gc := c.(type) {
 		case GinController:
 			router := s.gin.Group(gc.Path(), gc.Middlewares()...)
+			gc.SetName(gc.Name())
 			gc.SetServer(s)
+			gc.SetRouter(router)
 			gc.Mount(router)
 		default:
 			panic(fmt.Sprintf("Mount gin controller error: [%s] is not GinController", reflect.TypeOf(c)))
@@ -133,9 +144,11 @@ func (s *GinServer) Mount(controllers ...interface{}) Server {
 }
 
 func (s *GinServer) Start() {
-	if len(s.middlewares) > 0 {
-		s.gin.Use(s.middlewares...)
-	}
+	s.Mount(&ActuatorController{})
+	//if len(s.middlewares) > 0 {
+	//	s.gin.Use(s.middlewares...)
+	//}
+
 	srv := &http.Server{
 		Addr:    s.addr(),
 		Handler: s.gin,
@@ -171,9 +184,11 @@ func (s *GinServer) Start() {
 
 type GinController interface {
 	Name() string
+	SetName(name string)
 	Path() string
 	GetServer() *GinServer
 	SetServer(server *GinServer)
+	SetRouter(router *gin.RouterGroup)
 	GetEngine() *gin.Engine
 	Middlewares() []gin.HandlerFunc
 	// Mount 挂载Endpoint
@@ -181,12 +196,18 @@ type GinController interface {
 }
 
 type BaseController struct {
-	//engine *gin.Engine
+	name   string
 	server *GinServer
+	router *gin.RouterGroup
+	routes []*Route
 }
 
 func (this *BaseController) Name() string {
 	panic("implement me")
+}
+
+func (this *BaseController) SetName(name string) {
+	this.name = name
 }
 
 func (this *BaseController) Path() string {
@@ -200,8 +221,13 @@ func (this *BaseController) GetServer() *GinServer {
 func (this *BaseController) GetEngine() *gin.Engine {
 	return this.server.gin
 }
+
 func (this *BaseController) SetServer(server *GinServer) {
 	this.server = server
+}
+
+func (this *BaseController) SetRouter(router *gin.RouterGroup) {
+	this.router = router
 }
 
 func (this *BaseController) Middlewares() []gin.HandlerFunc {
@@ -213,6 +239,38 @@ func (this *BaseController) Mount(router *gin.RouterGroup) {
 
 func (this *BaseController) Context() *gin.Context {
 	return GetContext()
+}
+
+func (this *BaseController) Request(method string, path string, handler ...gin.HandlerFunc) *Route {
+	if len(handler) == 0 {
+		panic("handler should not be nil")
+	}
+	this.router.Handle(method, path, handler...)
+	route := &Route{
+		Group:      this.name,
+		Path:       pathLib.Join(this.router.BasePath(), path),
+		Method:     method,
+		Handler:    utils.FunctionName(handler[len(handler)-1]),
+		Permission: GuardAuthorization,
+	}
+	this.server.AddRoute(route)
+	return route
+}
+
+func (this *BaseController) Get(path string, handler ...gin.HandlerFunc) *Route {
+	return this.Request(http.MethodGet, path, handler...)
+}
+
+func (this *BaseController) Post(path string, handler ...gin.HandlerFunc) *Route {
+	return this.Request(http.MethodPost, path, handler...)
+}
+
+func (this *BaseController) Put(path string, handler ...gin.HandlerFunc) *Route {
+	return this.Request(http.MethodPut, path, handler...)
+}
+
+func (this *BaseController) Delete(path string, handler ...gin.HandlerFunc) *Route {
+	return this.Request(http.MethodDelete, path, handler...)
 }
 
 func (this *BaseController) ValidForm(value interface{}) (err error) {
@@ -314,7 +372,7 @@ type ActuatorController struct {
 }
 
 func (this *ActuatorController) Name() string {
-	return "actuator"
+	return "应用监控"
 }
 
 func (this *ActuatorController) Path() string {
@@ -322,9 +380,9 @@ func (this *ActuatorController) Path() string {
 }
 
 func (this *ActuatorController) Mount(router *gin.RouterGroup) {
-	router.GET("health", this.health)
-	router.GET("env", this.env)
-	router.GET("routes", this.routes)
+	this.Get("health", this.health).Anonymous().WithName("健康检测")
+	this.Get("env", this.env).WithName("查看环境变量")
+	this.Get("routes", this.routes).WithName("查看所有路由")
 }
 
 func (this *ActuatorController) health(ctx *gin.Context) {
@@ -332,8 +390,7 @@ func (this *ActuatorController) health(ctx *gin.Context) {
 }
 
 func (this *ActuatorController) routes(ctx *gin.Context) {
-	this.Send(Routes(this.GetEngine()))
-	ctx.String(http.StatusOK, "OK")
+	this.Send(this.server.routes)
 }
 
 func (this *ActuatorController) env(ctx *gin.Context) {
