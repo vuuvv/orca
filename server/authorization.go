@@ -25,6 +25,7 @@ const (
 type Authorization interface {
 	GetGuard(request *http.Request) Guard
 	Authorized(accessToken *AccessToken, request *http.Request) bool
+	Refresh() error
 }
 
 type SimpleAuthorization struct {
@@ -42,4 +43,8 @@ func (d SimpleAuthorization) GetGuard(request *http.Request) Guard {
 
 func (d SimpleAuthorization) Authorized(accessToken *AccessToken, request *http.Request) bool {
 	return true
+}
+
+func (d SimpleAuthorization) Refresh() error {
+	return nil
 }

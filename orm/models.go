@@ -52,8 +52,8 @@ type Entity struct {
 	UpdatedBy int64                 `json:"updatedBy" gorm:"comment:最后更新用户"`
 	CreatedAt time.Time             `json:"createdAt" gorm:"comment:创建时间"`
 	UpdatedAt time.Time             `json:"updatedAt" gorm:"comment:最后更新时间"`
-	DeletedAt soft_delete.DeletedAt `json:"deletedAt"  gorm:"comment:删除时间"`
 	Trashed   soft_delete.DeletedAt `json:"trashed" gorm:"softDelete:flag,DeletedAtField:DeletedAt;comment:是否已删除"`
+	DeletedAt soft_delete.DeletedAt `json:"deletedAt"  gorm:"comment:删除时间"`
 }
 
 type TreeType interface {

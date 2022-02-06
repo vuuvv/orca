@@ -34,9 +34,10 @@ var httpMethods = []string{
 }
 
 type GinServer struct {
-	gin    *gin.Engine
-	config *Config
-	routes []*Route
+	gin           *gin.Engine
+	config        *Config
+	routes        []*Route
+	authorization Authorization
 	//middlewares []gin.HandlerFunc
 }
 
@@ -125,6 +126,15 @@ func (s *GinServer) AddRoute(route *Route) {
 
 func (s *GinServer) Routes() []*Route {
 	return s.routes
+}
+
+func (s *GinServer) SetAuthorization(value Authorization) Server {
+	s.authorization = value
+	return s
+}
+
+func (s *GinServer) GetAuthorization() Authorization {
+	return s.authorization
 }
 
 func (s *GinServer) Mount(controllers ...interface{}) Server {
@@ -426,6 +436,27 @@ func WriteTokenToCookies(ctx *gin.Context, config *Config, accessToken string, r
 		config.RefreshTokenHead,
 		refreshToken,
 		config.RefreshTokenMaxAge*60,
+		"/",
+		"",
+		false,
+		true,
+	)
+}
+
+func RemoveTokenFromCookies(ctx *gin.Context, config *Config) {
+	ctx.SetCookie(
+		config.AccessTokenHead,
+		"",
+		-1,
+		"/",
+		"",
+		false,
+		true,
+	)
+	ctx.SetCookie(
+		config.RefreshTokenHead,
+		"",
+		-1,
 		"/",
 		"",
 		false,

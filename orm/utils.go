@@ -44,6 +44,11 @@ func prepare(template string, vars map[string]string, valueMap map[string]interf
 				val = fmt.Sprintf("%%%v", val)
 			}
 		}
+		if val == true {
+			val = 1
+		} else if val == false {
+			val = 0
+		}
 		values = append(values, val)
 	}
 
