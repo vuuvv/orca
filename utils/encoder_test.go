@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/fatih/structs"
 	"github.com/stretchr/testify/assert"
-	"github.com/vuuvv/vcommon/models"
+	"github.com/vuuvv/orca/orm"
 	"math/rand"
 	"testing"
 )
@@ -41,7 +41,7 @@ func TestEncodeIntToBase64LikeRandom(t *testing.T) {
 }
 
 type EmbeddedA struct {
-	models.Tree
+	orm.Tree
 	Name string
 	Age  int
 }
