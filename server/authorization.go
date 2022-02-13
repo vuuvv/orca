@@ -28,6 +28,21 @@ type Authorization interface {
 	Refresh() error
 }
 
+type NoAuthorization struct {
+}
+
+func (n NoAuthorization) GetGuard(request *http.Request) Guard {
+	return GuardAnonymous
+}
+
+func (n NoAuthorization) Authorized(accessToken *AccessToken, request *http.Request) bool {
+	return true
+}
+
+func (n NoAuthorization) Refresh() error {
+	return nil
+}
+
 type SimpleAuthorization struct {
 	AnonymousRoutes map[string]bool
 }
