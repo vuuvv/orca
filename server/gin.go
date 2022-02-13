@@ -291,6 +291,18 @@ func (this *BaseController) ParseFormIds() (ids []int64, err error) {
 	return ParseIds(this.Context())
 }
 
+func (this *BaseController) ParseFormId() (id *orm.Id, err error) {
+	id = &orm.Id{}
+	err = this.ValidForm(id)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	if id.GetId() == 0 {
+		return nil, ErrorBadRequest("请传入Id")
+	}
+	return
+}
+
 func (this *BaseController) GetQueryInt(key string, required bool) (value int, err error) {
 	return ParseQueryInt(this.Context(), key, required)
 }
@@ -464,10 +476,10 @@ func RemoveTokenFromCookies(ctx *gin.Context, config *Config) {
 	)
 }
 
-func GenTokens(config *Config, userId int64, username string, roles []int64) (accessToken string, refreshToken string, err error) {
+func GenTokens(config *Config, userId int64, username string, roles []int64, roleNames []string) (accessToken string, refreshToken string, err error) {
 	accessToken, err = GenAccessToken(
 		config.JwtIssuer, time.Duration(config.AccessTokenMaxAge)*time.Minute, config.JwtSecret,
-		userId, username, roles,
+		userId, username, roles, roleNames,
 	)
 	if err != nil {
 		return "", "", err

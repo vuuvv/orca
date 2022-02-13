@@ -28,6 +28,12 @@ func GetContext() *gin.Context {
 	return ctx.(*gin.Context)
 }
 
+func GetContextOptional() *gin.Context {
+	id := goid.Get()
+	ctx, _ := contexts.Load(id)
+	return ctx.(*gin.Context)
+}
+
 func GetAccessToken() *AccessToken {
 	ctx := GetContext()
 	val, ok := ctx.Get(AccessTokenContextKey)
@@ -70,7 +76,7 @@ func MiddlewareJwt(config *Config, authorization Authorization) gin.HandlerFunc 
 
 		// 重新写入刷新的token
 		if needRefresh {
-			accessTokenString, refreshTokenString, err := GenTokens(config, accessToken.UserId, accessToken.Username, accessToken.Roles)
+			accessTokenString, refreshTokenString, err := GenTokens(config, accessToken.UserId, accessToken.Username, accessToken.Roles, accessToken.RoleNames)
 			if err != nil {
 				ctx.JSON(http.StatusInternalServerError, NewError(http.StatusInternalServerError, err.Error()))
 				ctx.Abort()
