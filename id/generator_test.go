@@ -42,6 +42,6 @@ func TestNext(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error on NewGenerator: %+v", err)
 	}
-	val, err := g.Next()
+	val := g.Next()
 	t.Log(val)
 }
