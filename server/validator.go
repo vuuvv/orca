@@ -6,6 +6,7 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"github.com/vuuvv/errors"
 	"github.com/vuuvv/govalidator"
+	"github.com/vuuvv/orca/request"
 	"io"
 	"strconv"
 )
@@ -34,9 +35,9 @@ func Parse(ctx *gin.Context, val interface{}) (err error) {
 	decoder := jsoniter.NewDecoder(ctx.Request.Body)
 	if err = decoder.Decode(val); err != nil {
 		if errors.Is(err, io.EOF) {
-			return ErrorNoArgument()
+			return request.ErrorNoArgument()
 		}
-		return ErrorBadRequest(err.Error())
+		return request.ErrorBadRequest(err.Error())
 	}
 	return nil
 }
@@ -66,11 +67,11 @@ func ParseIds(ctx *gin.Context) (ids []int64, err error) {
 func ParseQueryInt(ctx *gin.Context, key string, required bool) (value int, err error) {
 	if str, ok := ctx.GetQuery(key); ok {
 		if value, err = strconv.Atoi(str); err != nil {
-			return 0, ErrorBadRequest("解析int错误：%s", err.Error())
+			return 0, request.ErrorBadRequest("解析int错误：%s", err.Error())
 		}
 	} else {
 		if required {
-			return 0, ErrorNoArgument()
+			return 0, request.ErrorNoArgument()
 		}
 	}
 	return value, err
@@ -79,11 +80,11 @@ func ParseQueryInt(ctx *gin.Context, key string, required bool) (value int, err 
 func ParseQueryInt64(ctx *gin.Context, key string, required bool) (value int64, err error) {
 	if str, ok := ctx.GetQuery(key); ok {
 		if value, err = strconv.ParseInt(str, 10, 64); err != nil {
-			return 0, ErrorBadRequest("解析int64错误：%s", err.Error())
+			return 0, request.ErrorBadRequest("解析int64错误：%s", err.Error())
 		}
 	} else {
 		if required {
-			return 0, ErrorNoArgument()
+			return 0, request.ErrorNoArgument()
 		}
 	}
 

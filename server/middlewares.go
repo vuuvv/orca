@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/vuuvv/errors"
 	"github.com/vuuvv/goid"
+	"github.com/vuuvv/orca/request"
 	"net/http"
 	"sync"
 	"time"
@@ -58,14 +59,14 @@ func MiddlewareJwt(config *Config, authorization Authorization) gin.HandlerFunc 
 
 		accessToken, needRefresh, err := validJwt(ctx, config)
 		if err != nil {
-			ctx.JSON(http.StatusUnauthorized, NewError(http.StatusUnauthorized, err.Error()))
+			ctx.JSON(http.StatusUnauthorized, request.NewError(http.StatusUnauthorized, err.Error()))
 			ctx.Abort()
 			return
 		}
 		ctx.Set(AccessTokenContextKey, accessToken)
 
 		if guard.IsGuard() && !authorization.Authorized(accessToken, ctx.Request) {
-			ctx.JSON(http.StatusForbidden, NewErrorForbidden())
+			ctx.JSON(http.StatusForbidden, request.NewErrorForbidden())
 			ctx.Abort()
 			return
 		}
@@ -78,7 +79,7 @@ func MiddlewareJwt(config *Config, authorization Authorization) gin.HandlerFunc 
 		if needRefresh {
 			accessTokenString, refreshTokenString, err := GenTokens(config, accessToken.UserId, accessToken.Username, accessToken.Roles, accessToken.RoleNames)
 			if err != nil {
-				ctx.JSON(http.StatusInternalServerError, NewError(http.StatusInternalServerError, err.Error()))
+				ctx.JSON(http.StatusInternalServerError, request.NewError(http.StatusInternalServerError, err.Error()))
 				ctx.Abort()
 				return
 			}
@@ -95,7 +96,7 @@ func validJwt(ctx *gin.Context, config *Config) (accessToken *AccessToken, needR
 	if accessTokenHead == "" {
 		cookie, err = ctx.Request.Cookie(config.AccessTokenHead)
 		if errors.Is(err, http.ErrNoCookie) {
-			return nil, false, NewErrorUnauthorized()
+			return nil, false, request.NewErrorUnauthorized()
 		}
 		if err != nil {
 			return nil, false, errors.WithStack(err)

@@ -9,6 +9,7 @@ import (
 	"github.com/vuuvv/errors"
 	"github.com/vuuvv/govalidator"
 	"github.com/vuuvv/orca/orm"
+	"github.com/vuuvv/orca/request"
 	"github.com/vuuvv/orca/utils"
 	"go.uber.org/zap"
 	"net/http"
@@ -298,7 +299,7 @@ func (this *BaseController) ParseFormId() (id *orm.Id, err error) {
 		return nil, errors.WithStack(err)
 	}
 	if id.GetId() == 0 {
-		return nil, ErrorBadRequest("请传入Id")
+		return nil, request.ErrorBadRequest("请传入Id")
 	}
 	return
 }
@@ -359,27 +360,27 @@ func (this *BaseController) SendError(err error) {
 	case govalidator.Error:
 		this.SendJson(http.StatusBadRequest, &Response{
 			Code:    http.StatusBadRequest,
-			Message: e.Error(),
-			Detail:  fmt.Sprintf("%+v", e),
+			Message: err.Error(),
+			Detail:  fmt.Sprintf("%+v", err),
 		})
 	case *govalidator.Error:
 		this.SendJson(http.StatusBadRequest, &Response{
 			Code:    http.StatusBadRequest,
-			Message: e.Error(),
-			Detail:  fmt.Sprintf("%+v", e),
+			Message: err.Error(),
+			Detail:  fmt.Sprintf("%+v", err),
 		})
-	case *Error:
+	case *request.Error:
 		this.SendJson(http.StatusInternalServerError, &Response{
 			Code:    e.Code,
-			Message: e.Error(),
+			Message: err.Error(),
 			Data:    e.Data,
-			Detail:  fmt.Sprintf("%+v", e),
+			Detail:  fmt.Sprintf("%+v", err),
 		})
 	default:
 		this.SendJson(http.StatusInternalServerError, &Response{
 			Code:    1,
-			Message: e.Error(),
-			Detail:  fmt.Sprintf("%+v", e),
+			Message: err.Error(),
+			Detail:  fmt.Sprintf("%+v", err),
 		})
 	}
 	msg := err.Error()

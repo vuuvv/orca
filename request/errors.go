@@ -1,4 +1,4 @@
-package server
+package request
 
 import (
 	"fmt"
@@ -23,7 +23,7 @@ func (e *Error) WithStack() error {
 	return errors.WithStack(e)
 }
 
-func NewError(code int, message string) error {
+func NewError(code int, message string) *Error {
 	return &Error{Code: code, Message: message}
 }
 
