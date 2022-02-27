@@ -155,7 +155,7 @@ func LockById(tx *gorm.DB, model EntityType, id int64) (err error) {
 }
 
 func GetBy(db *gorm.DB, model EntityType, name string, value interface{}) (err error) {
-	err = db.First(model, fmt.Sprintf("`%s`=?", name), value).Error
+	err = db.First(model, fmt.Sprintf("%s=?", Quote(db, name)), value).Error
 	if utils.RecordNotFound(err) {
 		return errors.Wrapf(err, fmt.Sprintf("%s不存在", model.TableTitle()))
 	}

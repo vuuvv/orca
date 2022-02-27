@@ -73,14 +73,16 @@ func get(params map[string]string) func(url string) (*resty.Response, error) {
 
 func dataHandler(typ string, data interface{}) func(url string) (*resty.Response, error) {
 	return func(url string) (*resty.Response, error) {
-		kind := reflect.Indirect(reflect.ValueOf(data)).Type().Kind()
+		if data != nil {
+			kind := reflect.Indirect(reflect.ValueOf(data)).Type().Kind()
 
-		if kind == reflect.Struct || kind == reflect.Map || kind == reflect.Slice {
-			bytes, err := jsoniter.Marshal(data)
-			if err != nil {
-				return nil, err
+			if kind == reflect.Struct || kind == reflect.Map || kind == reflect.Slice {
+				bytes, err := jsoniter.Marshal(data)
+				if err != nil {
+					return nil, err
+				}
+				data = bytes
 			}
-			data = bytes
 		}
 
 		req := GetClient().R().
