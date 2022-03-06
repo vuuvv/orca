@@ -1,9 +1,16 @@
 package request
 
-import "os"
+import (
+	"fmt"
+	"os"
+)
 
-const EnvServiceName = "SERVICE_NAME"
+const EnvServiceHost = "SERVICE_NAME"
 
-func ServiceName() string {
-	return os.Getenv(EnvServiceName)
+func ServiceHost() string {
+	return os.Getenv(EnvServiceHost)
+}
+
+func ServiceUrl(path string) string {
+	return fmt.Sprintf("%s%s", ServiceHost(), path)
 }
