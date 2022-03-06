@@ -13,6 +13,7 @@ var ErrInvalidAuthHeader = rawErrors.New("auth header is invalid")
 type AccessToken struct {
 	UserId    int64    `json:"userId"`
 	Username  string   `json:"username"`
+	OrgId     int64    `json:"orgId"`
 	Roles     []int64  `json:"roles"`
 	RoleNames []string `json:"roleNames"`
 	jwt.RegisteredClaims
@@ -23,10 +24,11 @@ type RefreshToken struct {
 	jwt.RegisteredClaims
 }
 
-func GenAccessToken(issuer string, liveDuration time.Duration, secret string, userId int64, username string, roles []int64, roleNames []string) (token string, err error) {
+func GenAccessToken(issuer string, liveDuration time.Duration, secret string, userId int64, username string, orgId int64, roles []int64, roleNames []string) (token string, err error) {
 	claim := AccessToken{
 		UserId:    userId,
 		Username:  username,
+		OrgId:     orgId,
 		Roles:     roles,
 		RoleNames: roleNames,
 		RegisteredClaims: jwt.RegisteredClaims{

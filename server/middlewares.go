@@ -77,7 +77,7 @@ func MiddlewareJwt(config *Config, authorization Authorization) gin.HandlerFunc 
 
 		// 重新写入刷新的token
 		if needRefresh {
-			accessTokenString, refreshTokenString, err := GenTokens(config, accessToken.UserId, accessToken.Username, accessToken.Roles, accessToken.RoleNames)
+			accessTokenString, refreshTokenString, err := GenTokens(config, accessToken.UserId, accessToken.Username, accessToken.OrgId, accessToken.Roles, accessToken.RoleNames)
 			if err != nil {
 				ctx.JSON(http.StatusInternalServerError, request.NewError(http.StatusInternalServerError, err.Error()))
 				ctx.Abort()
