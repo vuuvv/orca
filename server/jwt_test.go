@@ -8,7 +8,14 @@ import (
 
 func TestGenAccessToken(t *testing.T) {
 	secret := "test"
-	tokenString, err := GenAccessToken("orca", 5*time.Minute, secret, 123, "admin", 0, nil, nil)
+	tokenString, err := GenAccessToken("orca", 5*time.Minute, secret, &AccessToken{
+		Username:  "admin",
+		UserId:    123,
+		OrgId:     0,
+		OrgPath:   "",
+		Roles:     nil,
+		RoleNames: nil,
+	})
 	if err != nil {
 		t.Error(err)
 	}

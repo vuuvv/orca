@@ -14,6 +14,7 @@ type AccessToken struct {
 	UserId    int64    `json:"userId"`
 	Username  string   `json:"username"`
 	OrgId     int64    `json:"orgId"`
+	OrgPath   string   `json:"orgPath"`
 	Roles     []int64  `json:"roles"`
 	RoleNames []string `json:"roleNames"`
 	jwt.RegisteredClaims
@@ -24,20 +25,12 @@ type RefreshToken struct {
 	jwt.RegisteredClaims
 }
 
-func GenAccessToken(issuer string, liveDuration time.Duration, secret string, userId int64, username string, orgId int64, roles []int64, roleNames []string) (token string, err error) {
-	claim := AccessToken{
-		UserId:    userId,
-		Username:  username,
-		OrgId:     orgId,
-		Roles:     roles,
-		RoleNames: roleNames,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(liveDuration)),
-			Issuer:    issuer,
-		},
+func GenAccessToken(issuer string, liveDuration time.Duration, secret string, accessToken *AccessToken) (token string, err error) {
+	accessToken.RegisteredClaims = jwt.RegisteredClaims{
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(liveDuration)),
+		Issuer:    issuer,
 	}
-
-	token, err = jwt.NewWithClaims(jwt.SigningMethodHS256, claim).SignedString([]byte(secret))
+	token, err = jwt.NewWithClaims(jwt.SigningMethodHS256, accessToken).SignedString([]byte(secret))
 	return token, errors.WithStack(err)
 }
 

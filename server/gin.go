@@ -487,10 +487,9 @@ func RemoveTokenFromCookies(ctx *gin.Context, config *Config) {
 	)
 }
 
-func GenTokens(config *Config, userId int64, username string, orgId int64, roles []int64, roleNames []string) (accessToken string, refreshToken string, err error) {
+func GenTokens(config *Config, token *AccessToken) (accessToken string, refreshToken string, err error) {
 	accessToken, err = GenAccessToken(
-		config.JwtIssuer, time.Duration(config.AccessTokenMaxAge)*time.Minute, config.JwtSecret,
-		userId, username, orgId, roles, roleNames,
+		config.JwtIssuer, time.Duration(config.AccessTokenMaxAge)*time.Minute, config.JwtSecret, token,
 	)
 	if err != nil {
 		return "", "", err
@@ -499,7 +498,7 @@ func GenTokens(config *Config, userId int64, username string, orgId int64, roles
 		//return
 	}
 	refreshToken, err = GenRefreshToken(
-		config.JwtIssuer, time.Duration(config.RefreshTokenMaxAge)*time.Minute, config.JwtSecret, userId,
+		config.JwtIssuer, time.Duration(config.RefreshTokenMaxAge)*time.Minute, config.JwtSecret, token.UserId,
 	)
 	if err != nil {
 		return "", "", err
