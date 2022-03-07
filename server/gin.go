@@ -317,6 +317,11 @@ func (this *BaseController) GetPaginator() *orm.Paginator {
 }
 
 func (this *BaseController) Send(value interface{}) {
+	if value == nil {
+		this.SendJson(http.StatusOK, &Response{
+			Code: 0,
+		})
+	}
 	switch val := value.(type) {
 	case error:
 		this.SendError(val)
@@ -349,6 +354,11 @@ func (this *BaseController) SendJson(statusCode int, value interface{}) {
 }
 
 func (this *BaseController) SendError(err error) {
+	if err == nil {
+		this.SendJson(http.StatusOK, &Response{
+			Code: 0,
+		})
+	}
 	rawErr := err
 	if errors.HasStack(rawErr) {
 		rawErr = errors.Unwrap(rawErr)
