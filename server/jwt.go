@@ -4,6 +4,7 @@ import (
 	rawErrors "errors"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/vuuvv/errors"
+	"github.com/vuuvv/orca/id"
 	"strings"
 	"time"
 )
@@ -11,6 +12,7 @@ import (
 var ErrInvalidAuthHeader = rawErrors.New("auth header is invalid")
 
 type AccessToken struct {
+	Id        int64    `json:"id"`
 	UserId    int64    `json:"userId"`
 	Username  string   `json:"username"`
 	OrgId     int64    `json:"orgId"`
@@ -26,6 +28,9 @@ type RefreshToken struct {
 }
 
 func GenAccessToken(issuer string, liveDuration time.Duration, secret string, accessToken *AccessToken) (token string, err error) {
+	if accessToken.Id == 0 {
+		accessToken.Id = id.Next()
+	}
 	accessToken.RegisteredClaims = jwt.RegisteredClaims{
 		ExpiresAt: jwt.NewNumericDate(time.Now().Add(liveDuration)),
 		Issuer:    issuer,

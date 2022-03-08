@@ -10,6 +10,7 @@ import (
 	"github.com/vuuvv/govalidator"
 	"github.com/vuuvv/orca/orm"
 	"github.com/vuuvv/orca/request"
+	"github.com/vuuvv/orca/serialize"
 	"github.com/vuuvv/orca/utils"
 	"go.uber.org/zap"
 	"net/http"
@@ -21,6 +22,8 @@ import (
 	"syscall"
 	"time"
 )
+
+const HeadAccessUser = "AccessUser"
 
 var httpMethods = []string{
 	http.MethodGet,
@@ -282,6 +285,23 @@ func (this *BaseController) Put(path string, handler ...gin.HandlerFunc) *Route 
 
 func (this *BaseController) Delete(path string, handler ...gin.HandlerFunc) *Route {
 	return this.Request(http.MethodDelete, path, handler...)
+}
+
+func (this *BaseController) AccessUser() (user *AccessToken, err error) {
+	user = &AccessToken{}
+	ctx := this.Context()
+	body := ctx.Request.Header.Get(HeadAccessUser)
+	if body == "" {
+		return nil, request.NewErrorUnauthorized()
+	}
+	err = serialize.JsonParse(body, user)
+	if err != nil {
+		return nil, err
+	}
+	if user.OrgId == 0 {
+		return nil, request.NewErrorForbidden()
+	}
+	return user, nil
 }
 
 func (this *BaseController) ValidForm(value interface{}) (err error) {
