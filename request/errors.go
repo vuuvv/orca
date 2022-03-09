@@ -40,6 +40,7 @@ func ErrorNoArgument() error {
 
 var ErrorForbidden = &Error{
 	Code:    http.StatusForbidden,
+	Status:  http.StatusForbidden,
 	Message: "无权访问",
 	NeedLog: false,
 }
@@ -50,6 +51,7 @@ func NewErrorForbidden() error {
 
 var ErrorUnauthorized = &Error{
 	Code:    http.StatusUnauthorized,
+	Status:  http.StatusUnauthorized,
 	Message: "请先登录",
 	NeedLog: false,
 }
