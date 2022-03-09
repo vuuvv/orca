@@ -1,6 +1,7 @@
 package orm
 
 import (
+	"fmt"
 	"github.com/vuuvv/errors"
 	"github.com/vuuvv/orca/utils"
 	"gorm.io/gorm"
@@ -23,7 +24,7 @@ func (s *sequenceService) NextId(db *gorm.DB, key string) (value int, err error)
 	err = db.Transaction(func(tx *gorm.DB) error {
 		seq := &Sequence{}
 
-		err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(seq, "`key` = ?", key).Error
+		err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(seq, fmt.Sprintf("%s = ?", Quote(tx, "key")), key).Error
 		if err == gorm.ErrRecordNotFound {
 			// 新的记录则插入
 			seq.Key = key
