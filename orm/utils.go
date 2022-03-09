@@ -223,20 +223,27 @@ func Update(db *gorm.DB, model EntityType, form EntityType, excludeFields ...str
 	return nil
 }
 
+// CreateTree 须放入事务中
 func CreateTree(db *gorm.DB, model TreeType, parent TreeType) (err error) {
-	code, err := SequenceService.NextCode(db, model.TableName())
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	model.SetCode(code)
+	var code string
 	if parent == nil || parent.IsNull() {
+		code, err = SequenceService.NextCode(db, model.TableName())
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		model.SetCode(code)
 		model.SetPath(code)
 	} else {
+		code, err = SequenceService.NextCode(db, fmt.Sprintf("%s:%s", model.TableName(), parent.GetPath()))
+		if err != nil {
+			return errors.WithStack(err)
+		}
 		model.SetPath(fmt.Sprintf("%s:%s", parent.GetPath(), code))
 	}
-	return db.Create(model).Error
+	return errors.WithStack(db.Create(model).Error)
 }
 
+// UpdateTree 须放入事务中
 func UpdateTree(db *gorm.DB, model TreeType, form TreeType) (err error) {
 	err = GetById(db, model, form.GetId())
 	if err != nil {
@@ -248,13 +255,16 @@ func UpdateTree(db *gorm.DB, model TreeType, form TreeType) (err error) {
 	}
 
 	parentChanged := model.GetParentId() != form.GetParentId()
+	if parentChanged {
+		return errors.Errorf("不可更改上级[%s]", model.TableTitle())
+	}
 	oldPath := model.GetPath()
 	fields := NeedUpdateFields(model, form, "Code", "Path", "Tree")
 	if len(fields) > 0 {
 		if parentChanged {
 			if form.GetParentId() != 0 {
 				parent := &Tree{}
-				err := db.Table(model.TableName()).
+				err = db.Table(model.TableName()).
 					Where("id=?", form.GetParentId()).
 					Select("code", "path").
 					First(parent).Error
@@ -281,9 +291,9 @@ func UpdateTree(db *gorm.DB, model TreeType, form TreeType) (err error) {
 
 		if parentChanged {
 			err := db.Exec(
-				fmt.Sprintf("update `%s` set path=REGEXP_REPLACE(path, ?, ?) where path like ?", model.TableName()),
-				"^"+oldPath, model.GetPath(),
-				model.GetPath()+"%",
+				fmt.Sprintf("update %s set path=REGEXP_REPLACE(path, ?, ?) where path like ?", Quote(db, model.TableName())),
+				"^"+oldPath+":", model.GetPath()+":",
+				model.GetPath()+":%",
 			).Error
 			if err != nil {
 				return errors.WithStack(err)

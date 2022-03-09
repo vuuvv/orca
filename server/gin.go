@@ -341,6 +341,7 @@ func (this *BaseController) Send(value interface{}) {
 		this.SendJson(http.StatusOK, &Response{
 			Code: 0,
 		})
+		return
 	}
 	switch val := value.(type) {
 	case error:
@@ -378,6 +379,7 @@ func (this *BaseController) SendError(err error) {
 		this.SendJson(http.StatusOK, &Response{
 			Code: 0,
 		})
+		return
 	}
 	rawErr := err
 	if errors.HasStack(rawErr) {
