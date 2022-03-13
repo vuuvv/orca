@@ -14,6 +14,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"reflect"
+	"strings"
 )
 
 func RecordNotFound(err error) bool {
@@ -148,10 +149,7 @@ func LockById(tx *gorm.DB, model EntityType, id int64) (err error) {
 	if utils.RecordNotFound(err) {
 		return errors.Wrapf(err, fmt.Sprintf("%s不存在", model.TableTitle()))
 	}
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	return nil
+	return errors.WithStack(err)
 }
 
 func GetBy(db *gorm.DB, model EntityType, name string, value interface{}) (err error) {
@@ -159,10 +157,25 @@ func GetBy(db *gorm.DB, model EntityType, name string, value interface{}) (err e
 	if utils.RecordNotFound(err) {
 		return errors.Wrapf(err, fmt.Sprintf("%s不存在", model.TableTitle()))
 	}
-	if err != nil {
-		return errors.WithStack(err)
+	return errors.WithStack(err)
+}
+
+func GetByMap(db *gorm.DB, model EntityType, criteria map[string]interface{}) (err error) {
+	if criteria == nil {
+		return errors.New("请传入正确参数")
 	}
-	return nil
+	builder := strings.Builder{}
+	var values []interface{}
+	for k, v := range criteria {
+		builder.WriteString(fmt.Sprintf(" AND %s=?", Quote(db, k)))
+		values = append(values, v)
+	}
+	params := append([]interface{}{builder.String()[5:]}, values...)
+	err = db.First(model, params...).Error
+	if utils.RecordNotFound(err) {
+		return errors.Wrapf(err, fmt.Sprintf("%s不存在", model.TableTitle()))
+	}
+	return errors.WithStack(err)
 }
 
 func LockBy(tx *gorm.DB, model EntityType, name string, value interface{}) (err error) {
@@ -256,7 +269,7 @@ func UpdateTree(db *gorm.DB, model TreeType, form TreeType) (err error) {
 
 	parentChanged := model.GetParentId() != form.GetParentId()
 	if parentChanged {
-		return errors.Errorf("不可更改上级[%s]", model.TableTitle())
+		return errors.Errorf("不可更改[上级%s]", model.TableTitle())
 	}
 	oldPath := model.GetPath()
 	fields := NeedUpdateFields(model, form, "Code", "Path", "Tree")

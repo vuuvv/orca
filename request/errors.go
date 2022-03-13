@@ -46,7 +46,7 @@ var ErrorForbidden = &Error{
 }
 
 func NewErrorForbidden() error {
-	return errors.WithStack(ErrorForbidden)
+	return errors.WithStackAndSkip(ErrorForbidden, 1)
 }
 
 var ErrorUnauthorized = &Error{
@@ -57,5 +57,5 @@ var ErrorUnauthorized = &Error{
 }
 
 func NewErrorUnauthorized() error {
-	return errors.WithStack(ErrorUnauthorized)
+	return errors.WithStackAndSkip(ErrorUnauthorized, 1)
 }

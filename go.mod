@@ -10,7 +10,7 @@ require (
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/golang-jwt/jwt/v4 v4.2.0
-	github.com/jackc/pgconn v1.10.1
+	github.com/jackc/pgconn v1.11.0
 	github.com/jinzhu/copier v0.3.5
 	github.com/json-iterator/go v1.1.12
 	github.com/magiconair/properties v1.8.5
@@ -22,8 +22,9 @@ require (
 	github.com/vuuvv/snowflake v0.0.3
 	github.com/vuuvv/viper v1.10.5
 	go.uber.org/zap v1.17.0
-	gorm.io/driver/mysql v1.2.3
-	gorm.io/driver/postgres v1.2.3
-	gorm.io/gorm v1.22.5
-	gorm.io/plugin/soft_delete v1.0.5
+	gorm.io/datatypes v1.0.6
+	gorm.io/driver/mysql v1.3.2
+	gorm.io/driver/postgres v1.3.1
+	gorm.io/gorm v1.23.2
+	gorm.io/plugin/soft_delete v1.1.0
 )

@@ -22,6 +22,15 @@ type AccessToken struct {
 	jwt.RegisteredClaims
 }
 
+func (this *AccessToken) IsSuper() bool {
+	for _, r := range this.RoleNames {
+		if r == "system_manager" {
+			return true
+		}
+	}
+	return false
+}
+
 type RefreshToken struct {
 	UserId int64 `json:"userId"`
 	jwt.RegisteredClaims

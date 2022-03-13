@@ -2,6 +2,7 @@ package orm
 
 import (
 	"fmt"
+	"github.com/vuuvv/errors"
 	"github.com/vuuvv/orca/utils"
 	"gorm.io/gorm"
 	"strings"
@@ -189,9 +190,9 @@ func (p *PageExecutor) Query(db *gorm.DB, page *Paginator, items interface{}) (*
 	}
 	var err error
 	if len(values) > 0 {
-		err = db.Raw(sql, values...).Scan(items).Error
+		err = errors.WithStack(db.Raw(sql, values...).Scan(items).Error)
 	} else {
-		err = db.Raw(sql).Scan(items).Error
+		err = errors.WithStack(db.Raw(sql).Scan(items).Error)
 	}
 
 	if err != nil {
