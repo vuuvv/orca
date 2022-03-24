@@ -494,6 +494,18 @@ func SetSession(ctx *gin.Context, key string, value interface{}, seconds int) er
 	return errors.WithStack(err)
 }
 
+func RemoveSession(ctx *gin.Context, key string) {
+	ctx.SetCookie(
+		key,
+		"",
+		-1,
+		"/",
+		"",
+		false,
+		true,
+	)
+}
+
 func GetSession[T any](ctx *gin.Context, key string) (T, error) {
 	var ret T
 	body, err := GetSessionString(ctx, key)
