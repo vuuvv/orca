@@ -87,6 +87,8 @@ func dataHandler(typ string, data interface{}) func(url string) (*resty.Response
 
 		req := GetClient().R().
 			SetBody(data).
+			SetHeader("Content-Encoding", "UTF-8").
+			SetHeader("Content-Type", "application/json").
 			SetHeader("Accept", "application/json")
 		switch typ {
 		case http.MethodPost:

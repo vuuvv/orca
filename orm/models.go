@@ -2,11 +2,25 @@ package orm
 
 import (
 	"github.com/vuuvv/orca/id"
-	"gorm.io/datatypes"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 	"strings"
+	"time"
 )
+
+type WithTableTitle interface {
+	TableTitle() string
+}
+
+//func (this *TableTitled) Format(s fmt.State, verb rune) {
+//	switch verb {
+//	case 'v':
+//		if s.Flag('-') {
+//			_, _ = io.WriteString(s, this.TableTitle())
+//			return
+//		}
+//	}
+//}
 
 type EntityType interface {
 	GetId() int64
@@ -50,8 +64,8 @@ func (e *Id) SetId(value int64) {
 type Entity struct {
 	CreatedBy int64                 `json:"createdBy" gorm:"comment:创建用户"`
 	UpdatedBy int64                 `json:"updatedBy" gorm:"comment:最后更新用户"`
-	CreatedAt datatypes.Date        `json:"createdAt" gorm:"comment:创建时间"`
-	UpdatedAt datatypes.Date        `json:"updatedAt" gorm:"comment:最后更新时间"`
+	CreatedAt time.Time             `json:"createdAt" gorm:"comment:创建时间"`
+	UpdatedAt time.Time             `json:"updatedAt" gorm:"comment:最后更新时间"`
 	Trashed   soft_delete.DeletedAt `json:"trashed" gorm:"softDelete:flag,DeletedAtField:DeletedAt;comment:是否已删除"`
 	DeletedAt soft_delete.DeletedAt `json:"deletedAt"  gorm:"comment:删除时间"`
 }

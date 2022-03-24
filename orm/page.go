@@ -159,14 +159,14 @@ func (p *PageExecutor) Query(db *gorm.DB, page *Paginator, items interface{}) (*
 		countSql, values := prepare(utils.LineJoin(p.countSql, p.shareSql), vars, page.Filters, p.criteria)
 		rows, err := db.Raw(countSql, values...).Rows()
 		if err != nil {
-			return ret, err
+			return ret, errors.WithStack(err)
 		}
 		ret.Total = 0
 		for rows.Next() {
 			var c int
 			err := db.ScanRows(rows, &c)
 			if err != nil {
-				return nil, err
+				return nil, errors.WithStack(err)
 			}
 			ret.Total += c
 		}
@@ -196,7 +196,7 @@ func (p *PageExecutor) Query(db *gorm.DB, page *Paginator, items interface{}) (*
 	}
 
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	ret.Items = items

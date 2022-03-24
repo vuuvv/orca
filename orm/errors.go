@@ -39,3 +39,25 @@ func DuplicateMessage(err error, messages map[string]string) error {
 
 	return errors.WithStack(err)
 }
+
+func IsDuplicateError(err error) bool {
+	rawErr := err
+	if errors.HasStack(rawErr) {
+		rawErr = errors.Unwrap(rawErr)
+		if rawErr == nil {
+			rawErr = err
+		}
+	}
+	switch val := rawErr.(type) {
+	case *mysql.MySQLError:
+		if val.Number == 1062 {
+			return true
+		}
+
+	case *pgconn.PgError:
+		if val.Code == "23505" {
+			return true
+		}
+	}
+	return false
+}

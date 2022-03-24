@@ -21,3 +21,16 @@ func NewRedisClient(config *Config) (client *redis.Client, err error) {
 	zap.L().Info("redis客户端初始化成功", zap.String("host", client.Options().Addr))
 	return
 }
+
+var client *redis.Client
+
+func GetClient() *redis.Client {
+	if client == nil {
+		panic("Redis client is nil")
+	}
+	return client
+}
+
+func SetClient(c *redis.Client) {
+	client = c
+}

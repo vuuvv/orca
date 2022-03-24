@@ -127,7 +127,34 @@ func NeedUpdateFields(old interface{}, new interface{}, excludeFields ...string)
 //	utils.PanicIf(err)
 //}
 
-func GetById(db *gorm.DB, model EntityType, id int64) (err error) {
+func tableTitle(model interface{}) string {
+	switch m := model.(type) {
+	case WithTableTitle:
+		return m.TableTitle()
+	default:
+		return "[名称未配置]"
+	}
+}
+
+func GetById[T any](db *gorm.DB, id int64) (*T, error) {
+	var ret T
+	if reflect.ValueOf(ret).Kind() == reflect.Ptr {
+		return nil, errors.New("类型需非指针类型")
+	}
+	if id == 0 {
+		return nil, errors.New(fmt.Sprintf("未指定%sid", tableTitle(&ret)))
+	}
+	err := db.First(&ret, id).Error
+	if utils.RecordNotFound(err) {
+		return nil, errors.Wrapf(err, fmt.Sprintf("%s不存在", tableTitle(&ret)))
+	}
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return &ret, nil
+}
+
+func GetByIdRaw(db *gorm.DB, model EntityType, id int64) (err error) {
 	if id == 0 {
 		return errors.New(fmt.Sprintf("未指定%sid", model.TableTitle()))
 	}
@@ -141,29 +168,47 @@ func GetById(db *gorm.DB, model EntityType, id int64) (err error) {
 	return nil
 }
 
-func LockById(tx *gorm.DB, model EntityType, id int64) (err error) {
+func LockById[T any](db *gorm.DB, id int64) (*T, error) {
+	var ret T
+	if reflect.ValueOf(ret).Kind() == reflect.Ptr {
+		return nil, errors.New("类型需非指针类型")
+	}
 	if id == 0 {
-		return errors.New(fmt.Sprintf("未指定%sid", model.TableTitle()))
+		return nil, errors.New(fmt.Sprintf("未指定%sid", tableTitle(&ret)))
 	}
-	err = ForUpdate(tx).First(model, id).Error
+	err := ForUpdate(db).First(&ret, id).Error
 	if utils.RecordNotFound(err) {
-		return errors.Wrapf(err, fmt.Sprintf("%s不存在", model.TableTitle()))
+		return nil, errors.Wrapf(err, fmt.Sprintf("%s不存在", tableTitle(&ret)))
 	}
-	return errors.WithStack(err)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return &ret, nil
 }
 
-func GetBy(db *gorm.DB, model EntityType, name string, value interface{}) (err error) {
-	err = db.First(model, fmt.Sprintf("%s=?", Quote(db, name)), value).Error
-	if utils.RecordNotFound(err) {
-		return errors.Wrapf(err, fmt.Sprintf("%s不存在", model.TableTitle()))
+func GetBy[T any](db *gorm.DB, name string, value interface{}) (*T, error) {
+	var ret T
+	if reflect.ValueOf(ret).Kind() == reflect.Ptr {
+		return nil, errors.New("类型需非指针类型")
 	}
-	return errors.WithStack(err)
+
+	err := db.First(&ret, fmt.Sprintf("%s=?", Quote(db, name)), value).Error
+	if utils.RecordNotFound(err) {
+		return nil, errors.Wrapf(err, fmt.Sprintf("%s不存在", tableTitle(&ret)))
+	}
+	return &ret, errors.WithStack(err)
 }
 
-func GetByMap(db *gorm.DB, model EntityType, criteria map[string]interface{}) (err error) {
+func GetByMap[T any](db *gorm.DB, criteria map[string]interface{}) (*T, error) {
 	if criteria == nil {
-		return errors.New("请传入正确参数")
+		return nil, errors.New("请传入正确参数")
 	}
+
+	var ret T
+	if reflect.ValueOf(ret).Kind() == reflect.Ptr {
+		return nil, errors.New("类型需非指针类型")
+	}
+
 	builder := strings.Builder{}
 	var values []interface{}
 	for k, v := range criteria {
@@ -171,11 +216,11 @@ func GetByMap(db *gorm.DB, model EntityType, criteria map[string]interface{}) (e
 		values = append(values, v)
 	}
 	params := append([]interface{}{builder.String()[5:]}, values...)
-	err = db.First(model, params...).Error
+	err := db.First(&ret, params...).Error
 	if utils.RecordNotFound(err) {
-		return errors.Wrapf(err, fmt.Sprintf("%s不存在", model.TableTitle()))
+		return nil, errors.Wrapf(err, fmt.Sprintf("%s不存在", tableTitle(&ret)))
 	}
-	return errors.WithStack(err)
+	return &ret, errors.WithStack(err)
 }
 
 func LockBy(tx *gorm.DB, model EntityType, name string, value interface{}) (err error) {
@@ -258,7 +303,7 @@ func CreateTree(db *gorm.DB, model TreeType, parent TreeType) (err error) {
 
 // UpdateTree 须放入事务中
 func UpdateTree(db *gorm.DB, model TreeType, form TreeType) (err error) {
-	err = GetById(db, model, form.GetId())
+	err = GetByIdRaw(db, model, form.GetId())
 	if err != nil {
 		return errors.WithStack(err)
 	}

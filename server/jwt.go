@@ -22,6 +22,14 @@ type AccessToken struct {
 	jwt.RegisteredClaims
 }
 
+func (this *AccessToken) GetId() int64 {
+	return this.Id
+}
+
+func (this *AccessToken) GetName() string {
+	return this.Username
+}
+
 func (this *AccessToken) IsSuper() bool {
 	for _, r := range this.RoleNames {
 		if r == "system_manager" {

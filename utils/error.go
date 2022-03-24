@@ -4,11 +4,12 @@ import (
 	"github.com/go-redis/redis/v8"
 	"github.com/vuuvv/errors"
 	"gorm.io/gorm"
+	"net/http"
 )
 
 func RecordNotFound(err error) bool {
-	//return errors.Is(err, redis.Nil) || errors.Is(err, gorm.ErrRecordNotFound) || errors.Is(err, errors.Nil)
-	return errors.Is(err, redis.Nil) || errors.Is(err, gorm.ErrRecordNotFound)
+	return errors.Is(err, redis.Nil) || errors.Is(err, gorm.ErrRecordNotFound) || errors.Is(err, http.ErrNoCookie)
+	//return errors.Is(err, redis.Nil) || errors.Is(err, gorm.ErrRecordNotFound)
 }
 
 // WrapRecordNotFound 如果是记录不存在错误，生成新的错误

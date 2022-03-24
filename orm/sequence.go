@@ -17,6 +17,10 @@ func (*Sequence) TableName() string {
 	return "t_sequence"
 }
 
+func (*Sequence) TableTitle() string {
+	return "序列号"
+}
+
 type sequenceService struct {
 }
 

@@ -8,7 +8,9 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"github.com/vuuvv/errors"
 	"github.com/vuuvv/govalidator"
+	"github.com/vuuvv/orca/id"
 	"github.com/vuuvv/orca/orm"
+	"github.com/vuuvv/orca/redis"
 	"github.com/vuuvv/orca/request"
 	"github.com/vuuvv/orca/serialize"
 	"github.com/vuuvv/orca/utils"
@@ -18,6 +20,7 @@ import (
 	"os/signal"
 	pathLib "path"
 	"reflect"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -288,13 +291,12 @@ func (this *BaseController) Delete(path string, handler ...gin.HandlerFunc) *Rou
 }
 
 func (this *BaseController) AccessUser() (user *AccessToken, err error) {
-	user = &AccessToken{}
 	ctx := this.Context()
 	body := ctx.Request.Header.Get(HeadAccessUser)
 	if body == "" {
 		return nil, request.NewErrorUnauthorized()
 	}
-	err = serialize.JsonParse(body, user)
+	user, err = serialize.JsonParse[AccessToken](body)
 	if err != nil {
 		return nil, err
 	}
@@ -324,6 +326,10 @@ func (this *BaseController) ParseFormId() (id *orm.Id, err error) {
 	return
 }
 
+func (this *BaseController) GetQuery(key string) string {
+	return this.Context().Query(key)
+}
+
 func (this *BaseController) GetQueryInt(key string, required bool) (value int, err error) {
 	return ParseQueryInt(this.Context(), key, required)
 }
@@ -344,6 +350,8 @@ func (this *BaseController) Send(value interface{}) {
 		return
 	}
 	switch val := value.(type) {
+	case []byte:
+		this.SendData(http.StatusOK, "application/json; charset=utf-8", val)
 	case error:
 		this.SendError(val)
 	default:
@@ -459,6 +467,60 @@ func (this *ActuatorController) env(ctx *gin.Context) {
 		ret[key[0:i]] = key[i+1:]
 	}
 	this.Send(ret)
+}
+
+func sessionKey(key string) string {
+	return fmt.Sprintf("/session/%s", key)
+}
+
+func SetSession(ctx *gin.Context, key string, value interface{}, seconds int) error {
+	redisKey := strconv.FormatInt(id.Next(), 10)
+	ctx.SetCookie(
+		key,
+		redisKey,
+		seconds,
+		"/",
+		"",
+		false,
+		true,
+	)
+	payload, err := serialize.JsonStringify(value)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	err = redis.GetClient().Set(
+		context.Background(), sessionKey(redisKey), payload, time.Duration(seconds)*time.Second,
+	).Err()
+	return errors.WithStack(err)
+}
+
+func GetSession[T any](ctx *gin.Context, key string) (T, error) {
+	var ret T
+	body, err := GetSessionString(ctx, key)
+	if err != nil {
+		return ret, errors.WithStack(err)
+	}
+	return serialize.JsonParsePrimitive[T](body)
+}
+
+func GetSessionP[T any](ctx *gin.Context, key string) (*T, error) {
+	body, err := GetSessionString(ctx, key)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return serialize.JsonParse[T](body)
+}
+
+func GetSessionString(ctx *gin.Context, key string) (string, error) {
+	redisKey, err := ctx.Cookie(key)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	body, err := redis.GetClient().Get(context.Background(), sessionKey(redisKey)).Result()
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	return body, nil
 }
 
 func WriteTokenToHead(ctx *gin.Context, config *Config, accessToken string, refreshToken string) {

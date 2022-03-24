@@ -1,6 +1,7 @@
 package orca
 
 import (
+	"context"
 	"database/sql"
 	redis2 "github.com/go-redis/redis/v8"
 	"github.com/vuuvv/errors"
@@ -9,10 +10,12 @@ import (
 	"github.com/vuuvv/orca/logger"
 	"github.com/vuuvv/orca/orm"
 	"github.com/vuuvv/orca/redis"
+	"github.com/vuuvv/orca/redislock"
 	"github.com/vuuvv/orca/serialize"
 	"github.com/vuuvv/orca/server"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
+	"time"
 )
 
 type Application struct {
@@ -88,6 +91,7 @@ func NewApplication(opts ...ApplicationOption) *Application {
 		if err != nil {
 			panic(err)
 		}
+		redis.SetClient(app.redisClient)
 	}
 
 	if app.redisClient != nil {
@@ -195,6 +199,12 @@ func Redis() *redis2.Client {
 
 func Database() *gorm.DB {
 	return defaultApplication.db
+}
+
+func RedisLock(ctx context.Context, key string, ttl time.Duration, opt *redislock.Options) (*redislock.Lock, error) {
+	locker := redislock.New(Redis())
+	lock, err := locker.Obtain(ctx, key, ttl, opt)
+	return lock, errors.WithStack(err)
 }
 
 func Transaction(fc func(tx *gorm.DB) error, opts ...*sql.TxOptions) error {

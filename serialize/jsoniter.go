@@ -27,6 +27,12 @@ func MustJsonStringify(value interface{}) string {
 }
 
 func JsonStringify(value interface{}) (string, error) {
+	switch val := value.(type) {
+	case string:
+		return val, nil
+	case []byte:
+		return string(val), nil
+	}
 	bytes, err := jsoniter.Marshal(value)
 	if err != nil {
 		return "", errors.WithStack(err)
@@ -43,31 +49,64 @@ func MustJsonStringifyBytes(value interface{}) []byte {
 }
 
 func JsonStringifyBytes(value interface{}) ([]byte, error) {
+	switch val := value.(type) {
+	case string:
+		return []byte(val), nil
+	case []byte:
+		return val, nil
+	}
 	bytes, err := jsoniter.Marshal(value)
 	return bytes, errors.WithStack(err)
 }
 
-func MustJsonParse(json string, value interface{}) {
-	err := JsonParse(json, value)
+func MustJsonParse[T any](json string) *T {
+	return MustJsonParseBytes[T]([]byte(json))
+}
+
+func JsonParse[T any](json string) (*T, error) {
+	return JsonParseBytes[T]([]byte(json))
+}
+
+func MustJsonParsePrimitive[T any](json string) T {
+	return MustJsonParseBytesPrimitive[T]([]byte(json))
+}
+
+func JsonParsePrimitive[T any](json string) (T, error) {
+	return JsonParseBytesPrimitive[T]([]byte(json))
+}
+
+func MustJsonParseBytes[T any](json []byte) *T {
+	val, err := JsonParseBytes[T](json)
 	if err != nil {
 		panic(err)
 	}
+	return val
 }
 
-func JsonParse(json string, value interface{}) error {
-	return errors.WithStack(jsoniter.Unmarshal([]byte(json), value))
-
+func JsonParseBytes[T any](json []byte) (*T, error) {
+	var ret T
+	err := jsoniter.Unmarshal(json, &ret)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return &ret, nil
 }
 
-func MustJsonParseBytes(json []byte, value interface{}) {
-	err := JsonParseBytes(json, value)
+func MustJsonParseBytesPrimitive[T any](json []byte) T {
+	val, err := JsonParseBytesPrimitive[T](json)
 	if err != nil {
 		panic(err)
 	}
+	return val
 }
 
-func JsonParseBytes(json []byte, value interface{}) error {
-	return errors.WithStack(jsoniter.Unmarshal(json, value))
+func JsonParseBytesPrimitive[T any](json []byte) (T, error) {
+	var ret T
+	err := jsoniter.Unmarshal(json, &ret)
+	if err != nil {
+		return ret, errors.WithStack(err)
+	}
+	return ret, nil
 }
 
 func RegisterEncodeInt64() {
