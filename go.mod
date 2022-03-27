@@ -14,6 +14,7 @@ require (
 	github.com/jinzhu/copier v0.3.5
 	github.com/json-iterator/go v1.1.12
 	github.com/magiconair/properties v1.8.5
+	github.com/meehow/securebytes v0.3.1
 	github.com/stretchr/testify v1.7.0
 	github.com/vuuvv/errors v0.9.5
 	github.com/vuuvv/goid v0.0.1

@@ -34,8 +34,12 @@ func ErrorBadRequest(format string, a ...interface{}) error {
 	})
 }
 
-func ErrorNoArgument() error {
-	return ErrorBadRequest("请传入参数")
+func ErrorNoArgument(key string) error {
+	msg := "参数错误：请传入参数"
+	if key != "" {
+		msg += "[" + key + "]"
+	}
+	return ErrorBadRequest(msg)
 }
 
 var ErrorForbidden = &Error{

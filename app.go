@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	redis2 "github.com/go-redis/redis/v8"
+	"github.com/meehow/securebytes"
 	"github.com/vuuvv/errors"
 	"github.com/vuuvv/orca/config"
 	"github.com/vuuvv/orca/id"
@@ -11,6 +12,7 @@ import (
 	"github.com/vuuvv/orca/orm"
 	"github.com/vuuvv/orca/redis"
 	"github.com/vuuvv/orca/redislock"
+	"github.com/vuuvv/orca/secure"
 	"github.com/vuuvv/orca/serialize"
 	"github.com/vuuvv/orca/server"
 	"go.uber.org/zap"
@@ -26,6 +28,7 @@ type Application struct {
 	redisClient  *redis2.Client
 	db           *gorm.DB
 	idGenerator  *id.Generator
+	secure       *securebytes.SecureBytes
 }
 
 type ApplicationOption func(app *Application)
@@ -127,6 +130,8 @@ func NewApplication(opts ...ApplicationOption) *Application {
 	if defaultApplication == nil {
 		ReplaceDefaultApplication(app)
 	}
+
+	secure.SetSecure(secure.NewSecure(httpConfig.JwtSecret))
 
 	return app
 }

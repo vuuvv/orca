@@ -35,7 +35,7 @@ func Parse(ctx *gin.Context, val interface{}) (err error) {
 	decoder := jsoniter.NewDecoder(ctx.Request.Body)
 	if err = decoder.Decode(val); err != nil {
 		if errors.Is(err, io.EOF) {
-			return request.ErrorNoArgument()
+			return request.ErrorNoArgument("")
 		}
 		return request.ErrorBadRequest(err.Error())
 	}
@@ -71,7 +71,7 @@ func ParseQueryInt(ctx *gin.Context, key string, required bool) (value int, err 
 		}
 	} else {
 		if required {
-			return 0, request.ErrorNoArgument()
+			return 0, request.ErrorNoArgument(key)
 		}
 	}
 	return value, err
@@ -84,7 +84,7 @@ func ParseQueryInt64(ctx *gin.Context, key string, required bool) (value int64, 
 		}
 	} else {
 		if required {
-			return 0, request.ErrorNoArgument()
+			return 0, request.ErrorNoArgument(key)
 		}
 	}
 

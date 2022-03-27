@@ -20,3 +20,10 @@ func NormalRecover(caller string) {
 		zap.L().Error("recover from: "+caller, zap.String("error", fmt.Sprintf("%+v", r)))
 	}
 }
+
+func Catch(caller string, handler func(reason interface{})) {
+	if r := recover(); r != nil {
+		zap.L().Error("recover from: "+caller, zap.String("error", fmt.Sprintf("%+v", r)))
+		handler(r)
+	}
+}
