@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/go-redis/redis/v8"
-	jsoniter "github.com/json-iterator/go"
 	"github.com/vuuvv/errors"
+	"github.com/vuuvv/orca/serialize"
 	"github.com/vuuvv/orca/utils"
 	"go.uber.org/zap"
 	"strings"
@@ -21,7 +21,7 @@ func consumerName(queue string) string {
 }
 
 func Produce(cli *redis.Client, queue string, value interface{}) error {
-	body, err := jsoniter.Marshal(value)
+	body, err := serialize.JsonStringify(value)
 	if err != nil {
 		return errors.WithStack(err)
 	}
